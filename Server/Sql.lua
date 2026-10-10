@@ -1,21 +1,13 @@
 if Config.Database == "SQL" then
 
+	-- One DELETE and one network event for all expired scenes, instead of one of each per scene.
 	DB.Timecheck = function()
-		local Today = os.time()
-		local Count = 0
-		for k,v in pairs(Scenes.Current) do
-			local Expired = v.Created + 3600*v.Hours
-			if Expired < Today then
-				MySQL.Async.execute("DELETE FROM scenes WHERE id = @id", { ['@id'] = k }, function()
-					Scenes.Current[k] = nil
-					TriggerClientEvent("Scene:Delete", -1, k)
-				end)
-				Count = Count +1
-			end
-		end
-		if Count > 0 then
-			log("Deleted "..Count.." expired scenes.")
-		end
+		local Ids = GetExpiredScenes(os.time())
+		if #Ids == 0 then return end
+		for i = 1, #Ids do Scenes.Current[Ids[i]] = nil end
+		TriggerClientEvent("Scene:DeleteMany", -1, Ids)
+		MySQL.Async.execute("DELETE FROM scenes WHERE id IN ("..table.concat(Ids, ",")..")", {})
+		log("Deleted "..#Ids.." expired scenes.")
 	end
 
 	DB.NewScene = function(scene, Src, Id, CreationTime, NewScene)
@@ -23,7 +15,6 @@ if Config.Database == "SQL" then
 			{data = NewScene, owner = Id, created = CreationTime, hours = scene.Hours},
 		function(databaseid)
 			scene["Created"] = CreationTime
-			scene["Hours"] = scene.Hours
 			scene["Owner"] = Id
 			Scenes.Current[databaseid] = scene
 			TriggerClientEvent("Scene:Recieve", -1, scene, databaseid)
@@ -32,9 +23,9 @@ if Config.Database == "SQL" then
 
 	DB.GrabAll = function()
 		MySQL.Async.fetchAll("SELECT * FROM `scenes`", {}, function(result)
-			for k,v in pairs(result) do
+			for _, v in ipairs(result) do
 				local NewScene = json.decode(v.data)
-				NewScene["Created"] = v.created
+				NewScene["Created"] = tonumber(v.created)
 				NewScene["Owner"] = v.owner
 				NewScene["Hours"] = v.hours
 				local Old = NewScene.Location
@@ -46,13 +37,9 @@ if Config.Database == "SQL" then
 	end
 
 	DB.RemoveScene = function(id)
-		MySQL.Async.execute("DELETE FROM scenes WHERE id = @id", {['@id'] = id}, function()
-			Scenes.Current[id] = nil
-			TriggerClientEvent("Scene:Delete", -1, id)
-		end)
+		Scenes.Current[id] = nil
+		TriggerClientEvent("Scene:Delete", -1, id)
+		MySQL.Async.execute("DELETE FROM scenes WHERE id = @id", {['@id'] = id})
 	end
 
 end
-
-
-

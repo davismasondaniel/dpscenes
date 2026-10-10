@@ -36,19 +36,27 @@ function CurrentKey(key, time, wait)
 	return false
 end
 
+-- Key codes resolved once instead of string.upper + table lookup every frame.
+local MenuKeyCodes = {}
+for _, name in ipairs(Controls.MenuKeys) do
+	MenuKeyCodes[#MenuKeyCodes+1] = {name = name, code = Keys[name]}
+end
+
 CreateThread(function()
-	while true do Wait(0)
+	while true do
 		if Scene.State then
-			for k,v in pairs(Controls.MenuKeys) do
-				if IsControlPressed(0, GetKey(v)) then
-					Controls.Current = v
+			Wait(0)
+			for n = 1, #MenuKeyCodes do
+				local k = MenuKeyCodes[n]
+				if IsControlPressed(0, k.code) then
+					Controls.Current = k.name
 					Wait(1)
 					Controls.Current = nil
 					Wait(Controls.KeyTimeout or 120)
 				end
 			end
 		else
-			Wait(1000)
+			Wait(250)
 		end
 	end
 end)

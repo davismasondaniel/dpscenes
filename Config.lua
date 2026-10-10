@@ -7,12 +7,12 @@ Config = {
 		SQL is pretty usual, but KVP does not require mysql-async.
 		If you choose SQL you have to import the sql provided, KVP does not require any extra work.
 	]]--
-	Database = "KVP",
+	Database = "SQL",
 	-- Max scenes a player is allowed to have on their own.
-	MaxScenes = 20,
+	MaxScenes = 1000,
 	FontSize = {
-		Min = 0.25,
-		Max = 0.65
+		Min = 0.00,
+		Max = 1000.00
 	},
 	-- Amount of hours a scene is allowed to be up for.
 	SceneLength = {
@@ -22,8 +22,10 @@ Config = {
 		{Hours = 24},
 		{Hours = 48},
 		{Hours = 72},
+		{Hours = 128},
+		{Hours = 8000},
 	},
-	MaxSceneLength = 72, -- For validation upon creating a scene, incase someone has a preset saved with Hours = 128 or something.
+	MaxSceneLength = 8000, -- For validation upon creating a scene, incase someone has a preset saved with Hours = 128 or something.
 	--[[ 
 		Blacklist works like this:
 		If the function returns true then it displays the error text.
